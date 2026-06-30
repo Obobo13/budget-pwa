@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#0d0d0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Gestion · Dépenses</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --bg:#0d0d0f;--bg2:#131316;--bg3:#1a1a1f;
+    --border:#2a2a35;--border2:#38384a;
+    --text:#e8e8f0;--muted:#6b6b80;
+    --accent:#7c6af7;--accent2:#a855f7;
+    --green:#22c55e;--red:#ef4444;--yellow:#f59e0b;
+    --r:8px;--r2:6px;
+    --mono:'JetBrains Mono','Fira Mono','Consolas',monospace;
+  }
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;min-height:100dvh}
+
+  /* ── SETUP SCREEN ── */
+  #setup{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100dvh;padding:24px;gap:20px}
+  #setup h1{font-size:22px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center}
+  #setup p{font-size:13px;color:var(--muted);text-align:center;line-height:1.6;max-width:320px}
+  .setup-field{width:100%;max-width:360px;display:flex;flex-direction:column;gap:6px}
+  .setup-field label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .setup-field input{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:12px 14px;border-radius:var(--r);font-size:13px;font-family:var(--mono);outline:none;width:100%}
+  .setup-field input:focus{border-color:var(--accent)}
+  .setup-field .hint{font-size:10px;color:var(--muted);line-height:1.5}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;padding:14px 28px;border-radius:var(--r);font-size:14px;font-weight:600;cursor:pointer;width:100%;max-width:360px}
+  .btn-secondary{background:var(--bg3);color:var(--muted);border:1px solid var(--border);padding:10px 20px;border-radius:var(--r);font-size:13px;cursor:pointer;width:100%;max-width:360px}
+  #setup-err{color:var(--red);font-size:12px;min-height:16px;text-align:center}
+
+  /* ── MAIN APP ── */
+  #app{display:none;flex-direction:column;min-height:100dvh}
+
+  /* Header */
+  .app-header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+  .app-header-title{display:flex;flex-direction:column;gap:2px}
+  .app-header-title h1{font-size:15px;font-weight:800;color:var(--text)}
+  .app-header-title span{font-size:10px;color:var(--muted);font-family:var(--mono)}
+  .btn-refresh{background:none;border:1px solid var(--border2);color:var(--muted);border-radius:var(--r2);padding:6px 10px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px}
+  .btn-refresh:active{opacity:.7}
+  .spinning{animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* Month nav */
+  .month-nav{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg2);border-bottom:1px solid var(--border)}
+  .month-nav-btn{background:none;border:1px solid var(--border2);color:var(--muted);border-radius:var(--r2);padding:6px 12px;font-size:16px;cursor:pointer;line-height:1}
+  .month-nav-btn:active{opacity:.7}
+  .month-nav-label{font-size:15px;font-weight:700;color:var(--text)}
+
+  /* Solde card */
+  .solde-card{margin:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+  .solde-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .solde-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .solde-amount{font-size:26px;font-weight:800;font-family:var(--mono)}
+  .solde-pos{color:var(--green)}
+  .solde-neg{color:var(--red)}
+  .solde-zero{color:var(--muted)}
+  .mini-row{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:4px}
+  .mini-row span:last-child{font-family:var(--mono);color:var(--text)}
+
+  /* Catégories */
+  .cats-section{padding:0 16px 16px}
+  .cats-title{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+  .cat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;overflow:hidden}
+  .cat-header{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer}
+  .cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .cat-name{flex:1;font-size:13px;font-weight:600}
+  .cat-total{font-size:13px;font-family:var(--mono);font-weight:700}
+  .cat-chev{font-size:10px;color:var(--muted);transition:transform .2s}
+  .cat-chev.open{transform:rotate(180deg)}
+  .cat-lines{display:none;border-top:1px solid var(--border)}
+  .cat-lines.open{display:block}
+  .line-row{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border);font-size:12px}
+  .line-row:last-child{border:none}
+  .line-check{width:14px;height:14px;border-radius:3px;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px}
+  .line-check.checked{background:var(--green);border-color:var(--green);color:#fff}
+  .line-rec{font-size:9px;color:var(--accent2);flex-shrink:0}
+  .line-lbl{flex:1;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .line-lbl.checked{text-decoration:line-through;opacity:.5}
+  .line-amt{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+  .line-flag{font-size:10px;flex-shrink:0}
+
+  /* Revenus */
+  .rev-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);margin:0 16px 8px;padding:11px 14px;display:flex;justify-content:space-between;align-items:center}
+  .rev-lbl{font-size:13px;color:var(--text)}
+  .rev-amt{font-size:13px;font-family:var(--mono);color:var(--green);font-weight:700}
+
+  /* Empty / loading */
+  .centered{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;padding:40px;text-align:center}
+  .centered .icon{font-size:40px}
+  .centered p{color:var(--muted);font-size:13px;line-height:1.6}
+
+  /* Last sync */
+  .last-sync{font-size:10px;color:var(--muted);text-align:center;padding:8px 16px 20px;font-family:var(--mono)}
+
+  /* Toast */
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:10px 18px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:9999;white-space:nowrap}
+  #toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- ── SETUP ── -->
+<div id="setup">
+  <div style="font-size:48px">💰</div>
+  <h1>Gestion · Dépenses</h1>
+  <p>Entrez l'URL du Gist fournie par l'application bureau pour synchroniser vos données.</p>
+  <div class="setup-field">
+    <label>URL du snapshot cloud</label>
+    <input type="url" id="setup-url" placeholder="https://gist.githubusercontent.com/…" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+    <div class="hint">Copiez l'URL depuis ☁ Cloud → Copier le lien dans l'appli Windows</div>
+  </div>
+  <div id="setup-err"></div>
+  <button class="btn-primary" onclick="doSetup()">Connecter</button>
+  <button class="btn-secondary" style="display:none" id="btn-change-url" onclick="showSetup()">Changer d'URL</button>
+</div>
+
+<!-- ── APP ── -->
+<div id="app">
+  <div class="app-header">
+    <div class="app-header-title">
+      <h1>Gestion · Dépenses</h1>
+      <span id="hdr-file">—</span>
+    </div>
+    <button class="btn-refresh" onclick="refresh()" id="btn-refresh">
+      <span id="refresh-icon">↻</span> Sync
+    </button>
+  </div>
+
+  <div class="month-nav">
+    <button class="month-nav-btn" onclick="prevMonth()">‹</button>
+    <span class="month-nav-label" id="month-label">—</span>
+    <button class="month-nav-btn" onclick="nextMonth()">›</button>
+  </div>
+
+  <div id="app-body">
+    <div class="centered"><div class="icon">⏳</div><p>Chargement…</p></div>
+  </div>
+
+  <div class="last-sync" id="last-sync-label"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const GD_URL_KEY='gd_pwa_raw_url';
+const MFR=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+let snapshot=null;   // full snapshot JSON
+let viewYr=null, viewMn=null;  // currently displayed month
+
+// ── SETUP ──
+function showSetup(){
+  document.getElementById('setup').style.display='flex';
+  document.getElementById('app').style.display='none';
+}
+function showApp(){
+  document.getElementById('setup').style.display='none';
+  document.getElementById('app').style.display='flex';
+}
+
+async function doSetup(){
+  const url=document.getElementById('setup-url').value.trim();
+  const errEl=document.getElementById('setup-err');
+  errEl.textContent='';
+  if(!url){errEl.textContent='URL requise.';return;}
+  errEl.textContent='Vérification…';
+  try{
+    const r=await fetch(url+'?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data=await r.json();
+    if(data.v!==1) throw new Error('Format invalide');
+    localStorage.setItem(GD_URL_KEY,url);
+    snapshot=data;
+    initView();
+    showApp();
+  }catch(e){
+    errEl.textContent='Erreur : '+e.message;
+  }
+}
+
+// ── REFRESH ──
+async function refresh(){
+  const url=localStorage.getItem(GD_URL_KEY);
+  if(!url) return;
+  const icon=document.getElementById('refresh-icon');
+  icon.classList.add('spinning');
+  try{
+    const r=await fetch(url+'?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok) throw new Error(`HTTP ${r.status}`);
+    snapshot=await r.json();
+    renderMonth();
+    document.getElementById('last-sync-label').textContent='Synchronisé à '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    showToast('Données à jour ✓');
+  }catch(e){
+    showToast('Erreur sync : '+e.message);
+  }finally{
+    icon.classList.remove('spinning');
+  }
+}
+
+// ── VIEW INIT ──
+function initView(){
+  // Point on snapshot month, or current month if available
+  if(snapshot.yr && snapshot.mn){
+    viewYr=snapshot.yr; viewMn=snapshot.mn;
+  } else {
+    const now=new Date(); viewYr=now.getFullYear(); viewMn=now.getMonth()+1;
+  }
+  renderMonth();
+  document.getElementById('hdr-file').textContent=snapshot.file||'';
+  document.getElementById('last-sync-label').textContent='Export : '+new Date(snapshot.exported).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'});
+}
+
+function prevMonth(){
+  viewMn--;
+  if(viewMn<1){viewMn=12;viewYr--;}
+  renderMonth();
+}
+function nextMonth(){
+  viewMn++;
+  if(viewMn>12){viewMn=1;viewYr++;}
+  renderMonth();
+}
+
+// ── RENDER ──
+function fmt(n){
+  return parseFloat(n||0).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+}
+
+function renderMonth(){
+  const label=`${MFR[viewMn-1]} ${viewYr}`;
+  document.getElementById('month-label').textContent=label;
+
+  // Check if this is the snapshot month
+  const isSnapshotMonth=(snapshot && snapshot.yr===viewYr && snapshot.mn===viewMn);
+  const month=isSnapshotMonth?snapshot.month:null;
+  const cats=snapshot?snapshot.cats:[];
+
+  const body=document.getElementById('app-body');
+  if(!month){
+    body.innerHTML=`<div class="centered"><div class="icon">📭</div><p>Données non disponibles pour ${label}.<br>Seul le mois synchronisé est visible.</p></div>`;
+    return;
+  }
+
+  // Calculs
+  const salary=parseFloat(month.salary||0);
+  const carryover=parseFloat(month.carryover||0);
+  const incomes=month.incomes||[];
+  const lines=month.lines||{};
+
+  const totalInc=incomes.reduce((s,i)=>s+parseFloat(i.a||0),0);
+  let totalDep=0;
+  cats.forEach(c=>{(lines[c.id]||[]).forEach(l=>{ totalDep+=parseFloat(l.a||0); });});
+
+  const disponible=salary+carryover+totalInc;
+  const solde=disponible-totalDep;
+
+  const soldeClass=solde>0?'solde-pos':solde<0?'solde-neg':'solde-zero';
+
+  let html=`
+    <div class="solde-card">
+      <div class="solde-row">
+        <span class="solde-label">Solde prévisionnel</span>
+        <span class="solde-amount ${soldeClass}">${fmt(solde)}</span>
+      </div>
+      <div class="mini-row"><span>Salaire</span><span>${fmt(salary)}</span></div>
+      ${carryover!==0?`<div class="mini-row"><span>Report</span><span>${fmt(carryover)}</span></div>`:''}
+      ${totalInc>0?`<div class="mini-row"><span>Revenus supplémentaires</span><span>${fmt(totalInc)}</span></div>`:''}
+      <div class="mini-row"><span>Total dépenses</span><span style="color:var(--red)">${fmt(totalDep)}</span></div>
+    </div>`;
+
+  // Revenus supplémentaires
+  if(incomes.length>0){
+    html+=`<div style="padding:0 16px 6px"><div class="cats-title">Revenus</div></div>`;
+    incomes.forEach(inc=>{
+      html+=`<div class="rev-card"><span class="rev-lbl">${esc(inc.l||'')}</span><span class="rev-amt">+${fmt(inc.a)}</span></div>`;
+    });
+  }
+
+  // Catégories
+  html+=`<div class="cats-section"><div class="cats-title">Dépenses par catégorie</div>`;
+  cats.forEach(cat=>{
+    const catLines=lines[cat.id]||[];
+    if(!catLines.length) return;
+    const total=catLines.reduce((s,l)=>s+parseFloat(l.a||0),0);
+    const catId='cat-'+cat.id;
+    html+=`
+      <div class="cat-card">
+        <div class="cat-header" onclick="toggleCat('${catId}')">
+          <div class="cat-dot" style="background:${cat.color}"></div>
+          <span class="cat-name" style="color:${cat.color}">${esc(cat.label)}</span>
+          <span class="cat-total" style="color:${cat.color}">${fmt(total)}</span>
+          <span class="cat-chev" id="chev-${catId}">▼</span>
+        </div>
+        <div class="cat-lines" id="${catId}">
+          ${catLines.map(l=>`
+            <div class="line-row">
+              <div class="line-check ${l.checked?'checked'}">${l.checked?'✓':''}</div>
+              ${l.rec?'<span class="line-rec">↻</span>':''}
+              <span class="line-lbl ${l.checked?'checked'}">${esc(l.l||'')}</span>
+              <span class="line-amt">${fmt(l.a)}</span>
+              ${l.flagged?'<span class="line-flag">🚩</span>':''}
+            </div>`).join('')}
+        </div>
+      </div>`;
+  });
+  html+=`</div>`;
+
+  body.innerHTML=html;
+}
+
+function toggleCat(id){
+  const el=document.getElementById(id);
+  const chev=document.getElementById('chev-'+id);
+  el.classList.toggle('open');
+  if(chev) chev.classList.toggle('open');
+}
+
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── TOAST ──
+let toastTimer=null;
+function showToast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+// ── INIT ──
+(function(){
+  const url=localStorage.getItem(GD_URL_KEY);
+  if(url){
+    document.getElementById('setup-url').value=url;
+    document.getElementById('btn-change-url').style.display='block';
+    // Auto-load
+    fetch(url+'?t='+Date.now(),{cache:'no-store'})
+      .then(r=>r.ok?r.json():Promise.reject(r.status))
+      .then(data=>{
+        snapshot=data;
+        initView();
+        showApp();
+      })
+      .catch(()=>showSetup());
+  } else {
+    showSetup();
+  }
+})();
+</script>
+</body>
+</html>
