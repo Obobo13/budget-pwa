@@ -338,11 +338,14 @@ function showToast(msg){
 
 // ── INIT ──
 (function(){
-  const url=localStorage.getItem(GD_URL_KEY);
+  const params=new URLSearchParams(window.location.search);
+  const gistParam=params.get('gist');
+  const storedUrl=localStorage.getItem(GD_URL_KEY);
+  const url=gistParam||storedUrl;
+  if(gistParam&&gistParam!==storedUrl) localStorage.setItem(GD_URL_KEY,gistParam);
   if(url){
     document.getElementById('setup-url').value=url;
     document.getElementById('btn-change-url').style.display='block';
-    // Auto-load
     fetch(url+'?t='+Date.now(),{cache:'no-store'})
       .then(r=>r.ok?r.json():Promise.reject(r.status))
       .then(data=>{
