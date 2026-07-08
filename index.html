@@ -237,14 +237,20 @@ function renderMonth(){
   const label=`${MFR[viewMn-1]} ${viewYr}`;
   document.getElementById('month-label').textContent=label;
 
-  // Check if this is the snapshot month
-  const isSnapshotMonth=(snapshot && snapshot.yr===viewYr && snapshot.mn===viewMn);
-  const month=isSnapshotMonth?snapshot.month:null;
+  // Support v:2 (months object) and v:1 backward compat (single month)
+  let month=null;
+  if(snapshot){
+    if(snapshot.months){
+      month=snapshot.months[`${viewYr}-${viewMn}`]||null;
+    } else if(snapshot.yr===viewYr&&snapshot.mn===viewMn){
+      month=snapshot.month||null;
+    }
+  }
   const cats=snapshot?snapshot.cats:[];
 
   const body=document.getElementById('app-body');
   if(!month){
-    body.innerHTML=`<div class="centered"><div class="icon">📭</div><p>Données non disponibles pour ${label}.<br>Seul le mois synchronisé est visible.</p></div>`;
+    body.innerHTML=`<div class="centered"><div class="icon">📭</div><p>Données non disponibles pour ${label}.<br>Synchronisez depuis l'appli Windows pour accéder à ce mois.</p></div>`;
     return;
   }
 
