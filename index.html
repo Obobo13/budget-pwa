@@ -301,9 +301,9 @@ function renderMonth(){
         <div class="cat-lines" id="${catId}">
           ${catLines.map(l=>`
             <div class="line-row">
-              <div class="line-check ${l.checked?'checked'}">${l.checked?'✓':''}</div>
+              <div class="line-check ${l.checked?'checked':''}">${l.checked?'✓':''}</div>
               ${l.rec?'<span class="line-rec">↻</span>':''}
-              <span class="line-lbl ${l.checked?'checked'}">${esc(l.l||'')}</span>
+              <span class="line-lbl ${l.checked?'checked':''}">${esc(l.l||'')}</span>
               <span class="line-amt">${fmt(l.a)}</span>
               ${l.flagged?'<span class="line-flag">🚩</span>':''}
             </div>`).join('')}
